@@ -18,7 +18,48 @@ def get_similarity(d1, d2, sig=5.0):
 	sum /= -2*sig*sig
 	return math.e**sum
 		
+# calculates Euclidean distance for k-means
+def euclidean_distance(d1, d2):
+	if(len(d1) != len(d2)):
+		raise Exception()
+	sum = 0
+	for i in range(len(d1)):
+		sum += (d1[i]-d2[i])**2
+	return math.sqrt(sum)
+		
+# returns a list representing the centroid of the points in input_data
+def new_centroid(input_data):
+	# avg represents the new centroid itself, the average of all input_data points
+	avg = []
+	# iterates through each coordinate and appends to the new point
+	for i in range(len(input_data[0])):
+		coord = 0
+		# sum up the ith coordinate of the data pts
+		for j in range(len(input_data)):
+			coord += input_data[j][i]
+		avg.append(coord/len(input_data))
+	return avg
+	
+# performs k_means clustering on the input data, returning the cluster assignments
+# for each corresponding data point in input_data
+def k_means(input_data, k):
+	dim = len(input_data[0]) # num of coordinates for each point
+	centroids = [input_data[i] for i in range(k)]
+	cluster_assignments = [0 for i in range(len(input_data))]
+	# can change below later to use a flag, but not sure if converges
+	for iter in range(20): # arbitrary number to reset centroids
+		for point in range(len(input_data)):
+			dist = [euclidean_distance(input_data[point], centroids[i]) for i in range(len(centroids))]
+			# check which centroid has minimized distance
+			for c in range(len(dist)):
+				if(dist[c] < dist[cluster_assignments[point]]):
+					cluster_assignments[point] = c
+		for c in range(len(centroids)):
+			centroids[c] = new_centroid([input_data[p] for p in range(len(input_data)) if cluster_assignments[p] == c])
+	return cluster_assignments
 
+# performs spectral clustering on the input_data, returning a list of cluster
+# assignments to k distinct clusters for the corresponding data points
 def spectral_clustering(input_data, k):
 	# first we will construct a similarity graph such that
 	# similarity_graph[i][j] is the weight of the connection between
@@ -44,14 +85,13 @@ def spectral_clustering(input_data, k):
 	for i in range(n):
 		for j in range(n):
 			L[i][j] -= similarity_graph[i][j]/n
-	print(L)
+	
 	print("Computing eigenvectors...")
 	
 	# check for linear dependence?
 	L = numpy.array(L)
-	print(eigh(L))
+	# computes the first k eigenvectors
 	N = eigh(L)[1][-k:]
-	print(N.T)
 	N = N.T
 	# normalize row sums to have norm 1
 	for i in range(len(N)):
@@ -61,10 +101,12 @@ def spectral_clustering(input_data, k):
 		norm = math.sqrt(norm)
 		for j in range(k):
 			N[i][j] = N[i][j]/norm
-	print(N)
 	
+	print("Performing k-means clustering...")
 	# aaaaand cluster by k-means
+	return k_means(input_data, k)
+	
 	
 #print(get_similarity([1,30],[0,24]))
-spectral_clustering([[0.0,60.0,125.0],[1.0,73.2,153.2],[0.0,65.0,123.0],[1.0,78.2,142.2]], 2)
+#print(spectral_clustering([[0.0,60.0,125.0],[1.0,73.2,153.2],[0.0,65.0,123.0],[1.0,78.2,142.2]], 2))
 
