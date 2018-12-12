@@ -4,7 +4,7 @@ import math
 from scipy.linalg import eigh
 import matplotlib.pyplot
 
-SIG = 5.0 # controls size of neighborhood
+SIG = 5 # controls size of neighborhood
 
 
 # Gaussian kernel similarity function
@@ -56,7 +56,7 @@ def k_means(input_data, k):
 					cluster_assignments[point] = c
 		for c in range(len(centroids)):
 			centroids[c] = new_centroid([input_data[p] for p in range(len(input_data)) if cluster_assignments[p] == c])
-	return cluster_assignments
+	return input_data,cluster_assignments #temporary fix
 
 # performs spectral clustering on the input_data, returning a list of cluster
 # assignments to k distinct clusters for the corresponding data points
@@ -104,7 +104,7 @@ def spectral_clustering(input_data, k):
 	
 	print("Performing k-means clustering...")
 	# aaaaand cluster by k-means
-	return k_means(input_data, k)
+	return k_means(N, k)
 	
 	
 #print(get_similarity([1,30],[0,24]))
