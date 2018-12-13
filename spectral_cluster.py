@@ -4,7 +4,7 @@ import math
 from scipy.linalg import eigh
 import matplotlib.pyplot
 
-SIG = 5 # controls size of neighborhood
+SIG = 100 # controls size of neighborhood
 
 
 # Gaussian kernel similarity function
@@ -106,6 +106,53 @@ def spectral_clustering(input_data, k):
 	# aaaaand cluster by k-means
 	return k_means(N, k)
 	
+# performs spectral clustering on the input_data, returning a list of cluster
+# assignments to k distinct clusters for the corresponding data points
+def spectral_clustering_epsilon(input_data, k, epsilon=1.0):
+	# creates a similarity graph using an epsilon neighborhood graph
+	print("Generating similarity graph...")
+	similarity_graph = []
+	for i in range(len(input_data)):
+		row = []
+		for j in range(len(input_data)):
+			e = euclidean_distance(input_data[i], input_data[j])
+			#row.append(e if e > epsilon else 0)
+			row.append(1 if e > epsilon else 0)
+		similarity_graph.append(row)
+	
+	### ABOVE SHOULD WORK: PLES MODIFY BELOW
+	
+	# now we build a normalized Laplacian matrix for the graph
+	laplacian = []
+	n = len(input_data)
+	# begin with the identity matrix
+	L = [[0.0 for x in range(n)] for y in range(n)]
+	for i in range(n):
+		L[i][i] = 1.0
+	# calculate L = I - D^(-1)W
+	for i in range(n):
+		for j in range(n):
+			L[i][j] -= similarity_graph[i][j]/n
+	
+	print("Computing eigenvectors...")
+	
+	# check for linear dependence?
+	L = numpy.array(L)
+	# computes the first k eigenvectors
+	N = eigh(L)[1][-k:]
+	N = N.T
+	# normalize row sums to have norm 1
+	for i in range(len(N)):
+		norm = 0
+		for j in range(k):
+			norm += N[i][j]**2
+		norm = math.sqrt(norm)
+		for j in range(k):
+			N[i][j] = N[i][j]/norm
+	
+	print("Performing k-means clustering...")
+	# aaaaand cluster by k-means
+	return k_means(N, k)
 	
 #print(get_similarity([1,30],[0,24]))
 #print(spectral_clustering([[0.0,60.0,125.0],[1.0,73.2,153.2],[0.0,65.0,123.0],[1.0,78.2,142.2]], 2))
