@@ -1,10 +1,11 @@
 import numpy
 import scipy
 import math
+from scipy.linalg import fractional_matrix_power
 from scipy.linalg import eigh
 import matplotlib.pyplot
 
-SIG = 100 # controls size of neighborhood
+SIG = 5 # controls size of neighborhood
 
 
 # Gaussian kernel similarity function
@@ -85,7 +86,7 @@ def spectral_clustering(input_data, k):
 	for i in range(n):
 		for j in range(n):
 			L[i][j] -= similarity_graph[i][j]/n
-	
+
 	print("Computing eigenvectors...")
 	
 	# check for linear dependence?
@@ -117,7 +118,7 @@ def spectral_clustering_epsilon(input_data, k, epsilon=1.0):
 		for j in range(len(input_data)):
 			e = euclidean_distance(input_data[i], input_data[j])
 			#row.append(e if e > epsilon else 0)
-			row.append(1 if e > epsilon else 0)
+			row.append(1 if e < epsilon else 0)
 		similarity_graph.append(row)
 	
 	### ABOVE SHOULD WORK: PLES MODIFY BELOW
@@ -130,9 +131,30 @@ def spectral_clustering_epsilon(input_data, k, epsilon=1.0):
 	for i in range(n):
 		L[i][i] = 1.0
 	# calculate L = I - D^(-1)W
+	#for i in range(n):
+	#	for j in range(n):
+	#		L[i][j] -= similarity_graph[i][j]/n
+
+	# Since the similarity matrix is unweighted, W is the same as the similarity matrix
+	W = similarity_graph
+
+	# construct D, the degree matrix
+	D = [[0.0 for x in range(n)] for y in range(n)]
 	for i in range(n):
 		for j in range(n):
-			L[i][j] -= similarity_graph[i][j]/n
+			D[i][i] += similarity_graph[i][j]
+		D[i][i] = 1/D[i][i]
+	
+	L = numpy.array(L)
+	D = numpy.array(D)
+	W = numpy.array(similarity_graph)
+
+	L = L - numpy.matmul(D, W)
+
+	# calculate L = I - D^(-1/2)WD^(-1/2)
+	# calculate L = I - D^(-1)W
+	#L = L - numpy.matmul(numpy.matmul(fractional_matrix_power(D, -1/2), W), fractional_matrix_power(D, -1/2))
+	#L = L - numpy.matmul(numpy.linalg.matrix_power(D, -1), W)
 	
 	print("Computing eigenvectors...")
 	
@@ -155,5 +177,5 @@ def spectral_clustering_epsilon(input_data, k, epsilon=1.0):
 	return k_means(N, k)
 	
 #print(get_similarity([1,30],[0,24]))
-#print(spectral_clustering([[0.0,60.0,125.0],[1.0,73.2,153.2],[0.0,65.0,123.0],[1.0,78.2,142.2]], 2))
+#print(spectral_clustering_epsilon([[0.0,60.0,125.0],[1.0,73.2,153.2],[0.0,65.0,123.0],[1.0,78.2,142.2]], 2))
 
